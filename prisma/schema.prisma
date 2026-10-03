@@ -1,0 +1,258 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          String    @default("patient")
+  banned        Boolean?
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+
+  patient       Patient?
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+enum PatientStatus {
+  ACTIVE
+  DISCHARGED
+  CRITICAL
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ExerciseDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model Patient {
+  id          Int           @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  dob         DateTime
+  gender      String
+  phone       String
+  email       String
+  userId      String        @unique
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  injuryLevel String
+  ais         String
+  therapist   String?
+  program     String?
+  notes       String?
+  status      PatientStatus @default(ACTIVE)
+  isVerified  Boolean       @default(false)
+  verifiedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  emergencyContacts EmergencyContact[]
+  appointments      Appointment[]
+  activities        ActivityLog[]
+  assessments       Assessment[]
+  assignedExercises AssignedExercise[]
+  reports           PatientReport[]
+  dailyCheckIns     DailyCheckIn[]
+  medications       Medication[]
+  notifications     Notification[]
+}
+
+model EmergencyContact {
+  id           Int     @id @default(autoincrement())
+  patientId    Int
+  name         String
+  phone        String
+  relationship String
+  patient      Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model Assessment {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  date      DateTime @default(now())
+  week      Int
+
+  recoveryPct Int
+  upperLimb   Int
+  trunk       Int
+  fineMotor   Int
+  sensory     Int
+
+  therapist String?
+  notes     String?
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, date])
+}
+
+model ExerciseLibrary {
+  id           Int                @id @default(autoincrement())
+  name         String
+  category     String
+  difficulty   ExerciseDifficulty @default(BEGINNER)
+  target       String
+  instructions String
+  emoji        String
+  youtubeUrl   String?
+  duration     Int                @default(15)
+
+  assignedExercises AssignedExercise[]
+}
+
+model AssignedExercise {
+  id         Int @id @default(autoincrement())
+  patientId  Int
+  exerciseId Int
+
+  durationMins     Int
+  frequencyPerWeek Int
+
+  patient  Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  exercise ExerciseLibrary @relation(fields: [exerciseId], references: [id])
+}
+
+model Appointment {
+  id        Int               @id @default(autoincrement())
+  patientId Int
+  type      String
+  date      DateTime
+  time      String
+  therapist String
+  mode      String
+  status    AppointmentStatus @default(SCHEDULED)
+  patient   Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  patientId Int?
+  message   String
+  color     String?
+  createdAt DateTime @default(now())
+  patient   Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+}
+
+model PatientReport {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  name      String
+  type      String   // 'photo' or 'pdf'
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model DailyCheckIn {
+  id          Int      @id @default(autoincrement())
+  patientId   Int
+  dateString  String   // "YYYY-MM-DD"
+  water       Int      @default(0)
+  pain        Int?
+  mood        String?
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  @@unique([patientId, dateString])
+}
+
+model Medication {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  name      String
+  dosage    String
+  time      String
+  taken     Boolean  @default(false)
+  date      DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-adm-bg: #0d1117;
+  --color-adm-surface: #161b22;
+  --color-adm-card: #1c2330;
+  --color-adm-border: #30363d;
+  --color-adm-border2: #21262d;
+  --color-adm-text: #e6edf3;
+  --color-adm-muted: #7d8590;
+  --color-adm-accent: #2f81f7;
+  --color-adm-accent2: #3fb950;
+  --color-adm-warn: #d29922;
+  --color-adm-danger: #f85149;
+  --color-adm-teal: #39c5cf;
+
+  --color-pat-bg: #f0f4ff;
+  --color-pat-card: #ffffff;
+  --color-pat-navy: #1c3557;
+  --color-pat-blue: #2563eb;
+  --color-pat-blue-soft: #dbeafe;
+  --color-pat-teal: #0d9488;
+  --color-pat-teal-soft: #ccfbf1;
+  --color-pat-green: #16a34a;
+  --color-pat-green-soft: #dcfce7;
+  --color-pat-amber: #d97706;
+  --color-pat-amber-soft: #fef3c7;
+  --color-pat-red: #dc2626;
+  --color-pat-red-soft: #fee2e2;
+  --color-pat-text: #1a2332;
+  --color-pat-muted: #64748b;
+  --color-pat-border: #e2e8f0;
+
+  --font-sora: var(--font-sora), sans-serif;
+  --font-lora: var(--font-lora), serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
+
+  /* Typography */
+  --text-9: 9px;
+  --text-10: 10px;
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-15: 15px;
+  --text-20: 20px;
+  --text-22: 22px;
+  --text-24: 24px;
+  --text-28: 28px;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-9px: 9px;
+  --radius-10px: 10px;
+  --radius-14px: 14px;
+  --radius-18px: 18px;
+
+  /* Custom Spacing & Dimensions */
+  --spacing-1-5px: 1.5px;
+  --spacing-3px: 3px;
+  --spacing-5px: 5px;
+  --spacing-13px: 13px;
+  --spacing-18px: 18px;
+  --spacing-26px: 26px;
+  --spacing-34px: 34px;
+  --spacing-38px: 38px;
+  --spacing-46px: 46px;
+  --spacing-100px: 100px;
+  --spacing-130px: 130px;
+  --spacing-180px: 180px;
+  --spacing-220px: 220px;
+  --spacing-260px: 260px;
+  --spacing-280px: 280px;
+  --spacing-340px: 340px;
+  --spacing-450px: 450px;
+  --spacing-800px: 800px;
+  --spacing-82pct: 82%;
+  --container-xl: 1400px;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--font-sora);
+}
+
+/* Base custom classes from old index.html */
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
