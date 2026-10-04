@@ -47,7 +47,8 @@ export async function recordHealthUpdate(data: HealthUpdateInput) {
             return { success: false as const, error: 'Pain level must be between 0 and 10.' };
         }
 
-        const newUpdate = await prisma.healthUpdate.create({
+        const db = prisma as any;
+        const newUpdate = await db.healthUpdate.create({
             data: {
                 patientId: patient.id,
                 painLevel: Math.round(data.painLevel),

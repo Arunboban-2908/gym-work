@@ -71,7 +71,8 @@ export async function getPatients(): Promise<
  */
 export async function getPatientById(id: number) {
     try {
-        const patient = await prisma.patient.findUnique({
+        const db = prisma as any;
+        const patient = await db.patient.findUnique({
             where: { id },
             include: {
                 assessments: { orderBy: { date: 'desc' } },
@@ -372,8 +373,9 @@ export async function getCurrentPatientProfile() {
             emergencyContacts: true,
         };
 
+        const db = prisma as any;
         if (userId) {
-            const patient = await prisma.patient.findUnique({
+            const patient = await db.patient.findUnique({
                 where: { userId },
                 include: patientInclude
             });
@@ -383,13 +385,13 @@ export async function getCurrentPatientProfile() {
         }
 
         // Fallback to first verified patient for preview mode
-        const fallback = await prisma.patient.findFirst({
+        const fallback = await db.patient.findFirst({
             where: { isVerified: true },
             include: patientInclude
         });
         if (fallback) return { success: true as const, data: fallback };
 
-        const anyPatient = await prisma.patient.findFirst({
+        const anyPatient = await db.patient.findFirst({
             include: patientInclude
         });
         if (anyPatient) return { success: true as const, data: anyPatient };

@@ -45,7 +45,8 @@ export async function getPatientOnboardingData() {
             return { success: false as const, error: 'Unauthorized' };
         }
 
-        const patient = await prisma.patient.findUnique({
+        const db = prisma as any;
+        const patient = await db.patient.findUnique({
             where: { userId: session.user.id },
             include: {
                 healthProfile: true,
@@ -67,9 +68,9 @@ export async function getPatientOnboardingData() {
                 firstName: patient.firstName,
                 lastName: patient.lastName,
                 healthProfile: patient.healthProfile,
-                fitnessGoals: patient.fitnessGoals.map(g => g.goal),
-                medicalConditions: patient.medicalConditions.map(c => c.condition),
-                painLocations: patient.painLocations.map(p => ({
+                fitnessGoals: (patient.fitnessGoals || []).map((g: any) => g.goal),
+                medicalConditions: (patient.medicalConditions || []).map((c: any) => c.condition),
+                painLocations: (patient.painLocations || []).map((p: any) => ({
                     bodyPart: p.bodyPart,
                     painType: p.painType as 'Bone' | 'Joint' | 'Muscle',
                     severity: p.severity,
@@ -118,7 +119,8 @@ export async function saveOnboardingData(payload: OnboardingPayload) {
         const patientId = patient.id;
 
         // Perform atomic update across all Model 1 relational tables
-        await prisma.$transaction(async (tx) => {
+        const db = prisma as any;
+        await db.$transaction(async (tx: any) => {
             // 1. HealthProfile (Age, Height, Weight)
             await tx.healthProfile.upsert({
                 where: { patientId },

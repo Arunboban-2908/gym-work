@@ -99,6 +99,7 @@ export async function deleteAssessment(id: number, patientId: number) {
  */
 export async function getOverallAdminAnalytics() {
     try {
+        const db = prisma as any;
         const [
             totalPatients,
             activePatients,
@@ -112,22 +113,22 @@ export async function getOverallAdminAnalytics() {
             prisma.patient.count({ where: { status: 'ACTIVE' } }),
             prisma.patient.count({ where: { status: 'CRITICAL' } }),
             prisma.assessment.findMany({ select: { recoveryPct: true, week: true } }),
-            prisma.healthUpdate.findMany({ select: { painLevel: true, exerciseCompleted: true, createdAt: true } }),
+            db.healthUpdate.findMany({ select: { painLevel: true, exerciseCompleted: true, createdAt: true } }),
             prisma.patientReport.count(),
             prisma.assignedExercise.count()
         ]);
 
         const assessmentCount = assessments.length;
         const avgRecovery = assessmentCount > 0
-            ? Math.round(assessments.reduce((sum, a) => sum + a.recoveryPct, 0) / assessmentCount)
+            ? Math.round(assessments.reduce((sum: number, a: { recoveryPct: number }) => sum + a.recoveryPct, 0) / assessmentCount)
             : null;
 
-        const healthUpdateCount = healthUpdates.length;
+        const healthUpdateCount = (healthUpdates as any[]).length;
         const avgPain = healthUpdateCount > 0
-            ? +(healthUpdates.reduce((sum, u) => sum + u.painLevel, 0) / healthUpdateCount).toFixed(1)
+            ? +(healthUpdates.reduce((sum: number, u: { painLevel: number }) => sum + u.painLevel, 0) / healthUpdateCount).toFixed(1)
             : null;
 
-        const exerciseCompletedCount = healthUpdates.filter(u => u.exerciseCompleted).length;
+        const exerciseCompletedCount = (healthUpdates as any[]).filter((u: { exerciseCompleted: boolean }) => u.exerciseCompleted).length;
         const exerciseAdherence = healthUpdateCount > 0
             ? Math.round((exerciseCompletedCount / healthUpdateCount) * 100)
             : null;
@@ -158,7 +159,8 @@ export async function getOverallAdminAnalytics() {
  */
 export async function getPatientProgressDetails(patientId: number) {
     try {
-        const patient = await prisma.patient.findUnique({
+        const db = prisma as any;
+        const patient = await db.patient.findUnique({
             where: { id: patientId },
             include: {
                 healthProfile: true,
