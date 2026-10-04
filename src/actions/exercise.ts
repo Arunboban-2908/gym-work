@@ -75,3 +75,41 @@ export async function deleteExercise(id: number) {
         return { success: false, error: 'Failed to delete exercise' };
     }
 }
+
+/**
+ * Assigns a set of exercises from the library to a patient with custom duration and frequency.
+ */
+export async function assignExercisesToPatient(
+    patientId: number,
+    exercises: { exerciseId: number; durationMins: number; frequencyPerWeek: number }[]
+) {
+    try {
+        await prisma.$transaction(async (tx) => {
+            await tx.assignedExercise.deleteMany({
+                where: { patientId }
+            });
+
+            if (exercises.length > 0) {
+                await tx.assignedExercise.createMany({
+                    data: exercises.map(ex => ({
+                        patientId,
+                        exerciseId: ex.exerciseId,
+                        durationMins: ex.durationMins,
+                        frequencyPerWeek: ex.frequencyPerWeek
+                    }))
+                });
+            }
+        });
+
+        revalidatePath('/admin');
+        revalidatePath('/admin/patients');
+        revalidatePath('/user/exercises');
+        revalidatePath('/user');
+
+        return { success: true as const };
+    } catch (error) {
+        console.error('Error assigning exercises to patient:', error);
+        return { success: false as const, error: 'Failed to assign exercises to patient.' };
+    }
+}
+

@@ -12,7 +12,11 @@ import {
     WaterIntakeSection,
     MedicationsSection,
     NotificationsSection,
-    EmergencyContactSection
+    EmergencyContactSection,
+    TodaysHealthStatusSection,
+    MedicalDocumentsSection,
+    HealthBaselineCard,
+    RecoveryProgressSection
 } from './home-patient';
 
 export function PatientHome({ patient }: { patient: any }) {
@@ -35,14 +39,32 @@ export function PatientHome({ patient }: { patient: any }) {
 
     if (!patient) return null;
 
+    const initialPainLocations = (patient.painLocations || []).map((p: any) => p.bodyPart);
+
     return (
         <div className="flex-1 flex flex-col pb-4 h-full relative">
             <PatientHeader patient={patient} />
 
             <div className="px-3.5 pt-3 lg:p-6 lg:pt-6 flex-1 w-full max-w-container-xl mx-auto">
+                {/* Baseline Health Profile Banner (Model 1) */}
+                <HealthBaselineCard patient={patient} />
+
                 <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start w-full">
                     {/* Left Column */}
                     <div className="flex flex-col">
+                        {/* Today's Health Status (Model 2 Historical Logging) */}
+                        <TodaysHealthStatusSection
+                            patientId={patient.id}
+                            initialPainLocations={initialPainLocations}
+                            healthUpdates={patient.healthUpdates || []}
+                        />
+
+                        {/* Recovery & Discomfort Trends */}
+                        <RecoveryProgressSection
+                            healthUpdates={patient.healthUpdates || []}
+                            assessments={patient.assessments || []}
+                        />
+
                         <QuickActionsSection
                             onNavigate={handleNavigate}
                             onCallTherapist={() => toast('📞 Connecting to Therapist...', 'info')}
@@ -54,6 +76,16 @@ export function PatientHome({ patient }: { patient: any }) {
                             onNavigate={handleNavigate}
                             assignedExercises={patient.assignedExercises || []}
                         />
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="flex flex-col mt-3 mb-10 lg:mt-0">
+                        {/* Medical Documents (Cloudinary) */}
+                        <MedicalDocumentsSection
+                            patientId={patient.id}
+                            reports={patient.reports || []}
+                        />
+
                         <DailyCheckInSection
                             patientId={patient.id}
                             pain={pain}
@@ -61,10 +93,6 @@ export function PatientHome({ patient }: { patient: any }) {
                             mood={mood}
                             setMood={setMood}
                         />
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="flex flex-col mt-3 mb-10 lg:mt-0">
                         <WaterIntakeSection patientId={patient.id} initialWater={daily.water || 0} />
                         <MedicationsSection medications={patient.medications || []} />
                         <NotificationsSection

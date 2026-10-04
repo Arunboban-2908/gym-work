@@ -5,27 +5,58 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { createPatientForUser } from "@/actions/patient";
-import { User, Shield, ArrowRight } from "lucide-react";
+import { User, Shield, ArrowRight, Phone, Lock, Mail } from "lucide-react";
 
 export default function SignUpPage() {
     const router = useRouter();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setError("");
+
+        // Validation
+        if (!name.trim()) {
+            setError("Please enter your full name.");
+            return;
+        }
+
+        if (!email.trim() || !email.includes("@")) {
+            setError("Please enter a valid email address.");
+            return;
+        }
+
+        const cleanPhone = phone.trim();
+        if (!cleanPhone || cleanPhone.length < 7) {
+            setError("Please enter a valid phone number (at least 7 digits).");
+            return;
+        }
+
+        if (password.length < 6) {
+            setError("Password must be at least 6 characters long.");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match. Please verify and re-enter.");
+            return;
+        }
+
         setLoading(true);
 
         try {
             const { data: signUpData, error: signUpError } = await authClient.signUp.email({
-                name,
-                email,
+                name: name.trim(),
+                email: email.trim().toLowerCase(),
                 password,
             });
+
             if (signUpError) {
                 setError(signUpError.message ?? "Sign up failed. Please try again.");
                 setLoading(false);
@@ -33,12 +64,14 @@ export default function SignUpPage() {
             }
 
             if (signUpData?.user?.id) {
-                await createPatientForUser(signUpData.user.id, name, email);
+                // Link patient with real phone and no fake clinical data
+                await createPatientForUser(signUpData.user.id, name.trim(), email.trim(), cleanPhone);
             }
 
-            router.push("/user");
+            // Route immediately to patient onboarding
+            router.push("/onboarding");
         } catch {
-            setError("Something went wrong. Please try again.");
+            setError("Something went wrong during registration. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -71,51 +104,97 @@ export default function SignUpPage() {
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
                 <div>
                     <label htmlFor="auth-name" className="block text-xs font-medium text-adm-muted mb-1.5 uppercase tracking-wider">
                         Full Name
                     </label>
-                    <input
-                        id="auth-name"
-                        type="text"
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g. Sarah Connor"
-                        className="w-full px-4 py-2.5 rounded-xl bg-adm-bg/80 border border-adm-border text-adm-text placeholder-adm-muted/50 text-sm focus:outline-none focus:border-adm-accent focus:ring-1 focus:ring-adm-accent/40 transition-colors"
-                    />
+                    <div className="relative">
+                        <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-adm-muted/70" />
+                        <input
+                            id="auth-name"
+                            type="text"
+                            required
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="e.g. Sarah Connor"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-adm-bg/80 border border-adm-border text-adm-text placeholder-adm-muted/50 text-sm focus:outline-none focus:border-adm-accent focus:ring-1 focus:ring-adm-accent/40 transition-colors"
+                        />
+                    </div>
                 </div>
 
                 <div>
                     <label htmlFor="auth-email" className="block text-xs font-medium text-adm-muted mb-1.5 uppercase tracking-wider">
                         Email Address
                     </label>
-                    <input
-                        id="auth-email"
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        className="w-full px-4 py-2.5 rounded-xl bg-adm-bg/80 border border-adm-border text-adm-text placeholder-adm-muted/50 text-sm focus:outline-none focus:border-adm-accent focus:ring-1 focus:ring-adm-accent/40 transition-colors"
-                    />
+                    <div className="relative">
+                        <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-adm-muted/70" />
+                        <input
+                            id="auth-email"
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-adm-bg/80 border border-adm-border text-adm-text placeholder-adm-muted/50 text-sm focus:outline-none focus:border-adm-accent focus:ring-1 focus:ring-adm-accent/40 transition-colors"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label htmlFor="auth-phone" className="block text-xs font-medium text-adm-muted mb-1.5 uppercase tracking-wider">
+                        Phone Number
+                    </label>
+                    <div className="relative">
+                        <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-adm-muted/70" />
+                        <input
+                            id="auth-phone"
+                            type="tel"
+                            required
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="+1 (555) 000-0000"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-adm-bg/80 border border-adm-border text-adm-text placeholder-adm-muted/50 text-sm focus:outline-none focus:border-adm-accent focus:ring-1 focus:ring-adm-accent/40 transition-colors"
+                        />
+                    </div>
                 </div>
 
                 <div>
                     <label htmlFor="auth-password" className="block text-xs font-medium text-adm-muted mb-1.5 uppercase tracking-wider">
                         Password
                     </label>
-                    <input
-                        id="auth-password"
-                        type="password"
-                        required
-                        minLength={6}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-4 py-2.5 rounded-xl bg-adm-bg/80 border border-adm-border text-adm-text placeholder-adm-muted/50 text-sm focus:outline-none focus:border-adm-accent focus:ring-1 focus:ring-adm-accent/40 transition-colors"
-                    />
+                    <div className="relative">
+                        <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-adm-muted/70" />
+                        <input
+                            id="auth-password"
+                            type="password"
+                            required
+                            minLength={6}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-adm-bg/80 border border-adm-border text-adm-text placeholder-adm-muted/50 text-sm focus:outline-none focus:border-adm-accent focus:ring-1 focus:ring-adm-accent/40 transition-colors"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label htmlFor="auth-confirm-password" className="block text-xs font-medium text-adm-muted mb-1.5 uppercase tracking-wider">
+                        Confirm Password
+                    </label>
+                    <div className="relative">
+                        <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-adm-muted/70" />
+                        <input
+                            id="auth-confirm-password"
+                            type="password"
+                            required
+                            minLength={6}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-adm-bg/80 border border-adm-border text-adm-text placeholder-adm-muted/50 text-sm focus:outline-none focus:border-adm-accent focus:ring-1 focus:ring-adm-accent/40 transition-colors"
+                        />
+                    </div>
                 </div>
 
                 {error && (
@@ -141,7 +220,7 @@ export default function SignUpPage() {
                         </svg>
                     ) : (
                         <>
-                            <span>Register & Enter Portal</span>
+                            <span>Register & Start Health Onboarding</span>
                             <ArrowRight size={16} />
                         </>
                     )}

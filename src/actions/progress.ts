@@ -92,3 +92,91 @@ export async function deleteAssessment(id: number, patientId: number) {
         return { success: false, error: 'Failed to delete assessment' };
     }
 }
+
+/**
+ * Calculates aggregate clinical statistics from real stored records only.
+ * Discloses exact sample counts and avoids distorting averages.
+ */
+export async function getOverallAdminAnalytics() {
+    try {
+        const [
+            totalPatients,
+            activePatients,
+            criticalPatients,
+            assessments,
+            healthUpdates,
+            totalReports,
+            totalAssigned
+        ] = await Promise.all([
+            prisma.patient.count(),
+            prisma.patient.count({ where: { status: 'ACTIVE' } }),
+            prisma.patient.count({ where: { status: 'CRITICAL' } }),
+            prisma.assessment.findMany({ select: { recoveryPct: true, week: true } }),
+            prisma.healthUpdate.findMany({ select: { painLevel: true, exerciseCompleted: true, createdAt: true } }),
+            prisma.patientReport.count(),
+            prisma.assignedExercise.count()
+        ]);
+
+        const assessmentCount = assessments.length;
+        const avgRecovery = assessmentCount > 0
+            ? Math.round(assessments.reduce((sum, a) => sum + a.recoveryPct, 0) / assessmentCount)
+            : null;
+
+        const healthUpdateCount = healthUpdates.length;
+        const avgPain = healthUpdateCount > 0
+            ? +(healthUpdates.reduce((sum, u) => sum + u.painLevel, 0) / healthUpdateCount).toFixed(1)
+            : null;
+
+        const exerciseCompletedCount = healthUpdates.filter(u => u.exerciseCompleted).length;
+        const exerciseAdherence = healthUpdateCount > 0
+            ? Math.round((exerciseCompletedCount / healthUpdateCount) * 100)
+            : null;
+
+        return {
+            success: true as const,
+            data: {
+                totalPatients,
+                activePatients,
+                criticalPatients,
+                avgRecovery,
+                assessmentCount,
+                avgPain,
+                healthUpdateCount,
+                exerciseAdherence,
+                totalReports,
+                totalAssigned
+            }
+        };
+    } catch (error) {
+        console.error('Error fetching admin analytics:', error);
+        return { success: false as const, error: 'Failed to calculate analytics.' };
+    }
+}
+
+/**
+ * Fetches comprehensive progress data for a single patient
+ */
+export async function getPatientProgressDetails(patientId: number) {
+    try {
+        const patient = await prisma.patient.findUnique({
+            where: { id: patientId },
+            include: {
+                healthProfile: true,
+                fitnessGoals: true,
+                medicalConditions: true,
+                painLocations: true,
+                healthUpdates: { orderBy: { createdAt: 'asc' } },
+                assessments: { orderBy: { date: 'asc' } },
+                assignedExercises: { include: { exercise: true } },
+            }
+        });
+
+        if (!patient) return { success: false as const, error: 'Patient not found' };
+
+        return { success: true as const, data: patient };
+    } catch (error) {
+        console.error('Error fetching patient progress details:', error);
+        return { success: false as const, error: 'Failed to fetch patient progress' };
+    }
+}
+

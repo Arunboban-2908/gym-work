@@ -7,3 +7,7 @@ export * from './WaterIntakeSection';
 export * from './MedicationsSection';
 export * from './NotificationsSection';
 export * from './EmergencyContactSection';
+export * from './TodaysHealthStatusSection';
+export * from './MedicalDocumentsSection';
+export * from './HealthBaselineCard';
+export * from './RecoveryProgressSection';

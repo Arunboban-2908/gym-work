@@ -6,6 +6,8 @@ import { patientSchema, PatientFormValues } from '@/lib/validations/patient';
 import fs from 'fs';
 import path from 'path';
 import { v2 as cloudinary } from 'cloudinary';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -78,6 +80,13 @@ export async function getPatientById(id: number) {
                 assignedExercises: {
                     include: { exercise: true },
                 },
+                healthProfile: true,
+                fitnessGoals: true,
+                medicalConditions: true,
+                painLocations: true,
+                lifestyle: true,
+                healthUpdates: { orderBy: { createdAt: 'desc' } },
+                reports: { orderBy: { createdAt: 'desc' } },
             },
         });
 
@@ -332,35 +341,60 @@ export async function updatePatient(
 
 /**
  * Fetches the current patient profile for the patient app.
- * For now, this just returns the first verified patient.
+ * Resolves against authenticated user session, with demo fallback if unauthenticated.
  */
 export async function getCurrentPatientProfile() {
     try {
-        const patient = await prisma.patient.findFirst({
-            where: { isVerified: true },
-            include: {
-                assessments: { orderBy: { date: 'desc' }, take: 1 },
-                assignedExercises: { include: { exercise: true } },
-                dailyCheckIns: { orderBy: { dateString: 'desc' }, take: 1 },
-                medications: { orderBy: { date: 'desc' }, take: 5 },
-                notifications: { orderBy: { createdAt: 'desc' }, take: 5 }
+        let userId: string | null = null;
+        try {
+            const h = await headers();
+            const session = await auth.api.getSession({ headers: h });
+            if (session?.user?.id) {
+                userId = session.user.id;
             }
-        });
-        if (!patient) {
-            // fallback to first patient if no verified patients
-            const fallback = await prisma.patient.findFirst({
-                 include: { 
-                     assessments: { orderBy: { date: 'desc' }, take: 1 },
-                     assignedExercises: { include: { exercise: true } },
-                     dailyCheckIns: { orderBy: { dateString: 'desc' }, take: 1 },
-                     medications: { orderBy: { date: 'desc' }, take: 5 },
-                     notifications: { orderBy: { createdAt: 'desc' }, take: 5 }
-                 }
-            });
-            if (!fallback) return { success: false as const, error: 'No patients found' };
-            return { success: true as const, data: fallback };
+        } catch {
+            // Not in request context or session error
         }
-        return { success: true as const, data: patient };
+
+        const patientInclude = {
+            healthProfile: true,
+            fitnessGoals: true,
+            medicalConditions: true,
+            painLocations: true,
+            lifestyle: true,
+            healthUpdates: { orderBy: { createdAt: 'desc' as const } },
+            assessments: { orderBy: { date: 'desc' as const }, take: 1 },
+            assignedExercises: { include: { exercise: true } },
+            reports: { orderBy: { createdAt: 'desc' as const } },
+            dailyCheckIns: { orderBy: { dateString: 'desc' as const }, take: 1 },
+            medications: { orderBy: { date: 'desc' as const }, take: 5 },
+            notifications: { orderBy: { createdAt: 'desc' as const }, take: 5 },
+            emergencyContacts: true,
+        };
+
+        if (userId) {
+            const patient = await prisma.patient.findUnique({
+                where: { userId },
+                include: patientInclude
+            });
+            if (patient) {
+                return { success: true as const, data: patient };
+            }
+        }
+
+        // Fallback to first verified patient for preview mode
+        const fallback = await prisma.patient.findFirst({
+            where: { isVerified: true },
+            include: patientInclude
+        });
+        if (fallback) return { success: true as const, data: fallback };
+
+        const anyPatient = await prisma.patient.findFirst({
+            include: patientInclude
+        });
+        if (anyPatient) return { success: true as const, data: anyPatient };
+
+        return { success: false as const, error: 'No patients found' };
     } catch (error) {
         console.error('Error fetching current patient profile:', error);
         return { success: false as const, error: 'Failed to fetch current patient profile' };
@@ -384,77 +418,98 @@ export async function setUserRole(email: string, role: string) {
 }
 
 /**
- * Automatically creates and links a Patient record for a newly registered patient user
+ * Automatically creates and links a minimal Patient record for a newly registered patient user.
+ * NO fake medical data, NO fake DOB, NO fake phone, NO fake medications, NO fake exercises.
  */
-export async function createPatientForUser(userId: string, name: string, email: string) {
+export async function createPatientForUser(userId: string, name: string, email: string, phone: string = '') {
     try {
         const parts = name.trim().split(' ');
         const firstName = parts[0] || 'Patient';
-        const lastName = parts.slice(1).join(' ') || 'User';
+        const lastName = parts.slice(1).join(' ') || '';
 
-        const patient = await prisma.patient.create({
-            data: {
-                userId,
-                firstName,
-                lastName,
-                dob: new Date('1992-05-15'),
-                gender: 'Prefer not to say',
-                phone: '+1-555-0199',
-                email,
-                injuryLevel: 'C5-C7',
-                ais: 'AIS D',
-                status: 'ACTIVE',
-                isVerified: true,
-                verifiedAt: new Date(),
-                program: 'Standard Outpatient PT',
-                notes: 'Registered via patient portal.'
-            }
+        // Check if patient already exists for this user
+        let patient = await prisma.patient.findUnique({
+            where: { userId }
         });
 
-        // Assign 4 exercises from library
-        const exercises = await prisma.exerciseLibrary.findMany({ take: 4 });
-        for (const ex of exercises) {
-            await prisma.assignedExercise.create({
+        if (!patient) {
+            patient = await prisma.patient.create({
                 data: {
-                    patientId: patient.id,
-                    exerciseId: ex.id,
-                    durationMins: ex.duration || 15,
-                    frequencyPerWeek: 4
+                    userId,
+                    firstName,
+                    lastName,
+                    phone: phone.trim() || 'Not provided',
+                    email: email.trim().toLowerCase(),
+                    status: 'ACTIVE',
+                    isVerified: false,
+                    onboardingCompleted: false,
+                    notes: 'Newly registered patient.'
                 }
             });
         }
-
-        // Add initial check-in & medications
-        const today = new Date().toISOString().split('T')[0];
-        await prisma.dailyCheckIn.create({
-            data: {
-                patientId: patient.id,
-                dateString: today,
-                water: 4,
-                pain: 2,
-                mood: 'Good'
-            }
-        });
-
-        await prisma.medication.createMany({
-            data: [
-                { patientId: patient.id, name: 'Gabapentin', dosage: '300mg', time: '8:00 AM', taken: false },
-                { patientId: patient.id, name: 'Vitamin D3', dosage: '1000 IU', time: '8:00 PM', taken: false }
-            ]
-        });
-
-        await prisma.notification.create({
-            data: {
-                patientId: patient.id,
-                title: 'Welcome to NeuroPath!',
-                message: 'Your personalized exercise program is now available.'
-            }
-        });
 
         return { success: true as const, patient };
     } catch (error) {
         console.error('Error creating patient for user:', error);
         return { success: false as const, error: 'Failed to create patient record' };
+    }
+}
+
+/**
+ * Deletes a patient and all associated records (Admin-only).
+ * Also cleans up Cloudinary assets if any.
+ */
+export async function deletePatient(id: number) {
+    try {
+        // Authorization check
+        const h = await headers();
+        const session = await auth.api.getSession({ headers: h });
+        if (session?.user?.role !== 'admin') {
+            return { success: false as const, error: 'Unauthorized. Admin access required.' };
+        }
+
+        // Find patient and their reports
+        const patient = await prisma.patient.findUnique({
+            where: { id },
+            include: { reports: true }
+        });
+
+        if (!patient) {
+            return { success: false as const, error: 'Patient not found' };
+        }
+
+        // Clean up Cloudinary reports if possible
+        for (const report of patient.reports) {
+            try {
+                if (report.url && report.url.includes('cloudinary.com')) {
+                    const parts = report.url.split('/');
+                    const fileNameWithExt = parts[parts.length - 1];
+                    const publicId = `neuropath/reports/${fileNameWithExt.split('.')[0]}`;
+                    await cloudinary.uploader.destroy(publicId).catch(() => {});
+                }
+            } catch (err) {
+                console.warn('Could not delete Cloudinary asset for report:', report.id, err);
+            }
+        }
+
+        // Delete patient record - cascade deletes relations
+        await prisma.patient.delete({
+            where: { id }
+        });
+
+        // Also delete associated User account if exists
+        if (patient.userId) {
+            await prisma.user.delete({
+                where: { id: patient.userId }
+            }).catch(() => {});
+        }
+
+        revalidatePath('/admin');
+        revalidatePath('/admin/patients');
+        return { success: true as const };
+    } catch (error) {
+        console.error('Error deleting patient:', error);
+        return { success: false as const, error: 'Failed to delete patient' };
     }
 }
 

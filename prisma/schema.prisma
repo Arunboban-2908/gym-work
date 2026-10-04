@@ -102,23 +102,24 @@ enum ExerciseDifficulty {
 }
 
 model Patient {
-  id          Int           @id @default(autoincrement())
-  firstName   String
-  lastName    String
-  dob         DateTime
-  gender      String
-  phone       String
-  email       String
-  userId      String        @unique
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  injuryLevel String
-  ais         String
-  therapist   String?
-  program     String?
-  notes       String?
-  status      PatientStatus @default(ACTIVE)
-  isVerified  Boolean       @default(false)
-  verifiedAt  DateTime?
+  id                  Int           @id @default(autoincrement())
+  firstName           String
+  lastName            String
+  dob                 DateTime?     @default(now())
+  gender              String?       @default("Unspecified")
+  phone               String
+  email               String
+  userId              String        @unique
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  injuryLevel         String?       @default("General")
+  ais                 String?       @default("Pending")
+  therapist           String?
+  program             String?
+  notes               String?
+  status              PatientStatus @default(ACTIVE)
+  isVerified          Boolean       @default(false)
+  verifiedAt          DateTime?
+  onboardingCompleted Boolean       @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -132,6 +133,94 @@ model Patient {
   dailyCheckIns     DailyCheckIn[]
   medications       Medication[]
   notifications     Notification[]
+
+  // Model 1: Baseline Onboarding Data
+  healthProfile     HealthProfile?
+  fitnessGoals      FitnessGoal[]
+  medicalConditions MedicalCondition[]
+  painLocations     PainLocation[]
+  lifestyle         Lifestyle?
+
+  // Model 2: Ongoing Rehabilitation & Historical Health Tracking
+  healthUpdates     HealthUpdate[]
+}
+
+model HealthProfile {
+  id         Int      @id @default(autoincrement())
+  patientId  Int      @unique
+  age        Int
+  height     Float
+  heightUnit String   @default("cm")
+  weight     Float
+  weightUnit String   @default("kg")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model FitnessGoal {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  goal      String
+  createdAt DateTime @default(now())
+
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+}
+
+model MedicalCondition {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  condition String
+  createdAt DateTime @default(now())
+
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+}
+
+model PainLocation {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  bodyPart  String   // e.g. "Right Knee", "Lower Back"
+  painType  String   // "Bone", "Joint", "Muscle"
+  severity  Int      // 0 - 10
+  notes     String?
+  createdAt DateTime @default(now())
+
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+}
+
+model Lifestyle {
+  id           Int      @id @default(autoincrement())
+  patientId    Int      @unique
+  sittingHours Float
+  sleepHours   Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model HealthUpdate {
+  id                Int      @id @default(autoincrement())
+  patientId         Int
+  painLevel         Int      // 0 - 10
+  painLocation      String?
+  recoveryStatus    String   // "Improving", "Stable", "Getting Worse"
+  energyLevel       String   // "Low", "Moderate", "Good"
+  symptoms          String?
+  exerciseCompleted Boolean  @default(false)
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  patient           Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, createdAt])
 }
 
 model EmergencyContact {

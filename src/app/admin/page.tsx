@@ -60,9 +60,9 @@ export default async function AdminDashboard() {
         labels: ['Cervical', 'Thoracic', 'Lumbar'],
         datasets: [{
             data: [
-                patients.filter(p => p.injuryLevel.startsWith('C')).length,
-                patients.filter(p => p.injuryLevel.startsWith('T')).length,
-                patients.filter(p => p.injuryLevel.startsWith('L')).length,
+                patients.filter(p => p.injuryLevel?.startsWith('C')).length,
+                patients.filter(p => p.injuryLevel?.startsWith('T')).length,
+                patients.filter(p => p.injuryLevel?.startsWith('L')).length,
             ],
             backgroundColor: ['#2f81f7', '#3fb950', '#d29922'],
             borderWidth: 0,
@@ -90,8 +90,8 @@ export default async function AdminDashboard() {
         id: p.id,
         firstName: p.firstName,
         lastName: p.lastName,
-        injuryLevel: p.injuryLevel,
-        ais: p.ais,
+        injuryLevel: p.injuryLevel || 'General',
+        ais: p.ais || 'Pending',
         status: p.status,
         latestWeek: p.assessments[0]?.week ?? null,
         latestRecoveryPct: p.assessments[0]?.recoveryPct ?? null,
