@@ -145,7 +145,16 @@ function LoginForm() {
                             <span className="flex items-center gap-1">
                                 <Key size={13} /> Preset Admin Credentials:
                             </span>
-                            <span className="text-10 uppercase tracking-widest bg-adm-accent/20 px-1.5 py-0.5 rounded text-adm-text font-mono">Ready</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEmail("admin@neuropath.com");
+                                    setPassword("admin123");
+                                }}
+                                className="text-10 uppercase tracking-widest bg-adm-accent hover:brightness-110 text-white px-2 py-0.5 rounded cursor-pointer transition-colors font-mono font-bold"
+                            >
+                                Auto-Fill
+                            </button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-11 font-mono text-adm-text">
                             <div className="bg-adm-bg/60 p-2 rounded-lg border border-adm-border/50">
@@ -168,6 +177,35 @@ function LoginForm() {
                     <p className="text-xs text-adm-muted mt-1">
                         Normal authentication for patients to access personalized recovery & exercises.
                     </p>
+
+                    {/* Patient Credentials Helper Callout */}
+                    <div className="mt-3 p-3 bg-pat-blue-soft/50 border border-pat-blue/20 rounded-xl">
+                        <div className="flex items-center justify-between text-xs font-semibold text-pat-blue mb-1.5">
+                            <span className="flex items-center gap-1">
+                                <Key size={13} /> Preset Patient Credentials:
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEmail("patient@neuropath.com");
+                                    setPassword("patient123");
+                                }}
+                                className="text-10 uppercase tracking-widest bg-pat-navy hover:bg-[#152a45] text-white px-2 py-0.5 rounded cursor-pointer transition-colors font-mono font-bold"
+                            >
+                                Auto-Fill
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-11 font-mono text-adm-text">
+                            <div className="bg-adm-bg/60 p-2 rounded-lg border border-adm-border/50">
+                                <span className="text-9 text-adm-muted block font-sans">PATIENT EMAIL:</span>
+                                <span className="text-pat-blue font-bold break-all">patient@neuropath.com</span>
+                            </div>
+                            <div className="bg-adm-bg/60 p-2 rounded-lg border border-adm-border/50">
+                                <span className="text-9 text-adm-muted block font-sans">PASSWORD:</span>
+                                <span className="text-pat-blue font-bold">patient123</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 

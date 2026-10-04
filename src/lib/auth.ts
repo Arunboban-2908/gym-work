@@ -5,6 +5,8 @@ import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins";
 import prisma from "@/lib/prisma";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
@@ -12,10 +14,20 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
-    baseURL: process.env.BETTER_AUTH_URL,
+    baseURL: isDev
+        ? "http://localhost:3000"
+        : (process.env.BETTER_AUTH_URL || "https://gym-work-three.vercel.app"),
     secret: process.env.BETTER_AUTH_SECRET,
-    debug: true,
-    trustedOrigins: [`${process.env.BETTER_AUTH_URL}`],
+    debug: isDev,
+    trustedOrigins: [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "https://gym-work-three.vercel.app",
+        process.env.BETTER_AUTH_URL,
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+    ].filter(Boolean) as string[],
     plugins: [nextCookies(), admin({
         defaultRole: "patient",
     })],
