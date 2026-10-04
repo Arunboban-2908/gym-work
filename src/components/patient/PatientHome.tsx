@@ -42,7 +42,7 @@ export function PatientHome({ patient }: { patient: any }) {
     const initialPainLocations = (patient.painLocations || []).map((p: any) => p.bodyPart);
 
     return (
-        <div className="flex-1 flex flex-col pb-4 h-full relative">
+        <div className="flex-1 flex flex-col pb-12 lg:pb-6 h-full relative">
             <PatientHeader patient={patient} />
 
             <div className="px-3.5 pt-3 lg:p-6 lg:pt-6 flex-1 w-full max-w-container-xl mx-auto">

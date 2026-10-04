@@ -161,8 +161,8 @@ export default function PatientModal({ patientId, onClose, onUpdated }: PatientM
     const patientAge = healthProfile?.age ?? (patientData.dob ? new Date().getFullYear() - new Date(patientData.dob).getFullYear() : '—');
 
     return (
-        <div className="fixed inset-0 z-[1100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 pb-20 sm:pb-6 overflow-y-auto">
-            <div className="bg-adm-card border border-adm-border rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        <div className="fixed inset-0 z-[1100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6 pb-16 sm:pb-6 overflow-y-auto font-sora">
+            <div className="bg-adm-card border border-adm-border rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh]">
 
                 {/* Header */}
                 <div className="flex justify-between items-center p-5 border-b border-adm-border bg-adm-surface">
@@ -208,7 +208,7 @@ export default function PatientModal({ patientId, onClose, onUpdated }: PatientM
                 </div>
 
                 {/* Navigation Tabs */}
-                <div className="flex border-b border-adm-border bg-adm-surface/60 px-5 text-xs font-semibold">
+                <div className="flex overflow-x-auto scrollbar-hide border-b border-adm-border bg-adm-surface/60 px-2 sm:px-5 text-xs font-semibold whitespace-nowrap">
                     <button
                         type="button"
                         onClick={() => setActiveTab('profile')}
@@ -619,7 +619,7 @@ export default function PatientModal({ patientId, onClose, onUpdated }: PatientM
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-4 border-t border-adm-border bg-adm-surface flex flex-wrap items-center justify-between gap-3">
+                <div className="p-3 sm:p-4 border-t border-adm-border bg-adm-surface flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                     {/* Delete Patient (Admin-Only) */}
                     <div>
                         {confirmDeleteOpen ? (
@@ -657,12 +657,13 @@ export default function PatientModal({ patientId, onClose, onUpdated }: PatientM
                     </div>
 
                     {/* Status Updaters */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                         <Button
                             variant="danger"
                             size="sm"
                             disabled={statusLoading || patientData.status === 'CRITICAL'}
                             onClick={() => handleUpdateStatus('CRITICAL')}
+                            className="flex-1 sm:flex-none"
                         >
                             Mark Critical
                         </Button>
@@ -671,6 +672,7 @@ export default function PatientModal({ patientId, onClose, onUpdated }: PatientM
                             size="sm"
                             disabled={statusLoading || patientData.status === 'DISCHARGED'}
                             onClick={() => handleUpdateStatus('DISCHARGED')}
+                            className="flex-1 sm:flex-none"
                         >
                             Discharge
                         </Button>
@@ -679,6 +681,7 @@ export default function PatientModal({ patientId, onClose, onUpdated }: PatientM
                             size="sm"
                             disabled={statusLoading || patientData.status === 'ACTIVE'}
                             onClick={() => handleUpdateStatus('ACTIVE')}
+                            className="flex-1 sm:flex-none"
                         >
                             Mark Active
                         </Button>

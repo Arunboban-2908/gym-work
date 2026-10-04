@@ -15,20 +15,26 @@ export function PatientHeader({ patient }: PatientHeaderProps) {
         : '--';
 
     const recoveryPct = patient.assessments?.[0]?.recoveryPct || 0;
+    const injuryLine = [
+        patient.injuryLevel,
+        patient.ais,
+        week !== '--' ? `Week ${week}` : null,
+    ].filter(Boolean).join(' · ') || 'Personalized Rehab Program';
+
     return (
-        <div className="bg-gradient-to-br from-pat-navy via-[#1e4a7a] to-[#0d3a6e] px-5.5 pt-5 pb-7 relative overflow-hidden shrink-0 lg:sticky lg:top-0 lg:z-50 shadow-md">
+        <div className="bg-gradient-to-br from-pat-navy via-[#1e4a7a] to-[#0d3a6e] px-4 sm:px-5.5 pt-4 sm:pt-5 pb-5 sm:pb-7 relative overflow-hidden shrink-0 lg:sticky lg:top-0 lg:z-50 shadow-md">
             <div className="absolute -top-15 -right-10 w-50 h-50 rounded-full bg-blue-600/20" />
             <div className="absolute -bottom-30px left-15 w-30 h-30 rounded-full bg-teal-600/15" />
 
-            <div className="relative z-10 flex justify-between items-start">
-                <div>
-                    <div className="text-11 text-white/55 font-medium tracking-wide border border-transparent uppercase mb-1">{greeting}</div>
-                    <div className="text-22 font-extrabold text-white tracking-tight mb-0.5">{patient.firstName} {patient.lastName}</div>
-                    <div className="text-12 text-white/60 mb-2.5">{patient.injuryLevel} · {patient.ais} · Week {week}</div>
+            <div className="relative z-10 flex justify-between items-start gap-3">
+                <div className="min-w-0">
+                    <div className="text-10 sm:text-11 text-white/55 font-medium tracking-wide border border-transparent uppercase mb-1">{greeting}</div>
+                    <div className="text-18 sm:text-22 font-extrabold text-white tracking-tight mb-0.5 truncate">{patient.firstName} {patient.lastName}</div>
+                    <div className="text-11 sm:text-12 text-white/60 mb-2 truncate">{injuryLine}</div>
 
-                    <div className="inline-flex items-center gap-1.5 mt-1 bg-white/10 border border-white/15 px-2.5 py-1 rounded-full backdrop-blur-md">
-                        <div className="w-5px h-5px bg-green-400 rounded-full" />
-                        <div className="text-11 text-white/85 font-medium">Active Rehabilitation</div>
+                    <div className="inline-flex items-center gap-1.5 mt-0.5 bg-white/10 border border-white/15 px-2.5 py-1 rounded-full backdrop-blur-md">
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                        <div className="text-10 sm:text-11 text-white/85 font-medium">Active Rehabilitation</div>
                     </div>
                 </div>
                 <div className="text-right">

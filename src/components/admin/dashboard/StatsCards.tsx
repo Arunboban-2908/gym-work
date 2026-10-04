@@ -7,7 +7,7 @@ interface StatsCardsProps {
 
 export function StatsCards({ totalPatients, activePatients, avgRecovery, criticalPatients }: StatsCardsProps) {
     return (
-        <div className="grid grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-4">
             <div className="bg-adm-card border border-adm-border rounded-xl p-3 relative overflow-hidden after:absolute after:top-0 after:right-0 after:w-3px after:h-full after:bg-adm-accent">
                 <div className="text-11 text-adm-muted font-medium uppercase tracking-wide mb-2">Total Patients</div>
                 <div className="text-28 font-extrabold text-adm-text tracking-tight leading-none">{totalPatients}</div>

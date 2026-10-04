@@ -95,20 +95,22 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
     useEffect(() => {
         if (!containerRef.current) return;
         const width = containerRef.current.clientWidth;
-        const height = 480;
+        const isMobile = window.innerWidth < 640;
+        const height = isMobile ? 380 : 480;
 
         const scene = new THREE.Scene();
         sceneRef.current = scene;
         scene.background = new THREE.Color(0x0a101d);
 
         const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-        camera.position.set(0, 0.8, 10.5);
+        camera.position.set(0, 0.8, isMobile ? 11.5 : 10.5);
         cameraRef.current = camera;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         rendererRef.current = renderer;
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.domElement.style.touchAction = 'none';
         containerRef.current.replaceChildren(renderer.domElement);
 
         // Lights
@@ -174,6 +176,14 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
             };
         }
 
+        function getTouchPointerPos(touch: Touch) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            return {
+                x: ((touch.clientX - rect.left) / rect.width) * 2 - 1,
+                y: -((touch.clientY - rect.top) / rect.height) * 2 + 1,
+            };
+        }
+
         const handleMouseDown = (e: MouseEvent) => {
             isDraggingRef.current = true;
             prevMousePosRef.current = { x: e.clientX, y: e.clientY };
@@ -207,7 +217,6 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
             const movedDist = Math.hypot(e.clientX - prevMousePosRef.current.x, e.clientY - prevMousePosRef.current.y);
             isDraggingRef.current = false;
 
-            // Only trigger click selection if not a significant drag
             if (movedDist < 5) {
                 const pos = getPointerPos(e);
                 mouse.x = pos.x;
@@ -224,10 +233,56 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
             }
         };
 
+        // Touch event handlers for phones and tablets
+        const handleTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 1) {
+                isDraggingRef.current = true;
+                prevMousePosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        };
+
+        const handleTouchMove = (e: TouchEvent) => {
+            if (isDraggingRef.current && humanGroupRef.current && e.touches.length === 1) {
+                const deltaX = e.touches[0].clientX - prevMousePosRef.current.x;
+                const deltaY = e.touches[0].clientY - prevMousePosRef.current.y;
+                humanGroupRef.current.rotation.y += deltaX * 0.015;
+                humanGroupRef.current.rotation.x = Math.max(-0.5, Math.min(0.5, humanGroupRef.current.rotation.x + deltaY * 0.008));
+                prevMousePosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                if (e.cancelable) e.preventDefault();
+            }
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            if (e.changedTouches.length === 1) {
+                const touch = e.changedTouches[0];
+                const movedDist = Math.hypot(touch.clientX - prevMousePosRef.current.x, touch.clientY - prevMousePosRef.current.y);
+                isDraggingRef.current = false;
+
+                if (movedDist < 10) {
+                    const pos = getTouchPointerPos(touch);
+                    mouse.x = pos.x;
+                    mouse.y = pos.y;
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(humanGroup.children);
+                    if (intersects.length > 0) {
+                        const hit = intersects[0].object as THREE.Mesh;
+                        const region = hit.userData.regionDef as BodyRegionDef;
+                        if (region) {
+                            setSelectedRegion(region);
+                        }
+                    }
+                }
+            }
+        };
+
         const domElem = renderer.domElement;
         domElem.addEventListener('mousedown', handleMouseDown);
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
+
+        domElem.addEventListener('touchstart', handleTouchStart, { passive: false });
+        window.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('touchend', handleTouchEnd);
 
         // Render loop
         let reqId: number;
@@ -241,9 +296,10 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
         const handleResize = () => {
             if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
             const newW = containerRef.current.clientWidth;
-            cameraRef.current.aspect = newW / height;
+            const newH = window.innerWidth < 640 ? 380 : 480;
+            cameraRef.current.aspect = newW / newH;
             cameraRef.current.updateProjectionMatrix();
-            rendererRef.current.setSize(newW, height);
+            rendererRef.current.setSize(newW, newH);
         };
         window.addEventListener('resize', handleResize);
 
@@ -252,6 +308,9 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
             domElem.removeEventListener('mousedown', handleMouseDown);
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
+            domElem.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('touchend', handleTouchEnd);
             window.removeEventListener('resize', handleResize);
             renderer.dispose();
         };
@@ -355,29 +414,29 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
                 {/* 3D Viewport Box */}
                 <div className="lg:col-span-7 bg-[#0a101d] border border-adm-border/80 rounded-2xl overflow-hidden relative shadow-2xl flex flex-col items-center">
                     {/* View Controls Toolbar */}
-                    <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md px-2 py-1.5 rounded-xl border border-white/10 text-xs">
+                    <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 bg-slate-900/85 backdrop-blur-md px-1.5 py-1 sm:px-2 sm:py-1.5 rounded-xl border border-white/10 text-xs">
                         <button
                             type="button"
                             onClick={() => rotateTo(0)}
-                            className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-white/80 font-medium transition-colors cursor-pointer"
+                            className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg hover:bg-white/10 text-white/80 font-medium transition-colors cursor-pointer text-11"
                         >
                             Front
                         </button>
                         <button
                             type="button"
                             onClick={() => rotateTo(Math.PI)}
-                            className="px-2.5 py-1 rounded-lg hover:bg-white/10 text-white/80 font-medium transition-colors cursor-pointer"
+                            className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg hover:bg-white/10 text-white/80 font-medium transition-colors cursor-pointer text-11"
                         >
                             Back
                         </button>
-                        <div className="h-4 w-[1px] bg-white/20 mx-1" />
+                        <div className="h-3 w-[1px] bg-white/20 mx-0.5" />
                         <button
                             type="button"
                             onClick={() => zoomCamera(-1.2)}
                             className="p-1 rounded-lg hover:bg-white/10 text-white/80 transition-colors cursor-pointer"
                             title="Zoom In"
                         >
-                            <ZoomIn size={15} />
+                            <ZoomIn size={14} />
                         </button>
                         <button
                             type="button"
@@ -385,7 +444,7 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
                             className="p-1 rounded-lg hover:bg-white/10 text-white/80 transition-colors cursor-pointer"
                             title="Zoom Out"
                         >
-                            <ZoomOut size={15} />
+                            <ZoomOut size={14} />
                         </button>
                         <button
                             type="button"
@@ -393,17 +452,17 @@ export function BodyPain3DMap({ painLocations, onChange }: BodyPain3DMapProps) {
                             className="p-1 rounded-lg hover:bg-white/10 text-white/80 transition-colors cursor-pointer"
                             title="Reset View"
                         >
-                            <Compass size={15} />
+                            <Compass size={14} />
                         </button>
                     </div>
 
-                    {/* Hover Tooltip Overlay */}
-                    <div className="absolute top-3 right-3 z-10 bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-mono text-cyan-400">
-                        {hoveredName ? `Target: ${hoveredName}` : 'Drag to rotate • Click body region'}
+                    {/* Hover / Target Tooltip Overlay */}
+                    <div className="absolute bottom-14 sm:top-2.5 sm:bottom-auto right-2.5 z-10 bg-slate-900/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 text-10 sm:text-xs font-mono text-cyan-400">
+                        {hoveredName ? `Target: ${hoveredName}` : 'Swipe to rotate • Tap region'}
                     </div>
 
                     {/* Three.js Canvas Container */}
-                    <div ref={containerRef} className="w-full h-[480px] cursor-grab active:cursor-grabbing" />
+                    <div ref={containerRef} className="w-full h-[360px] sm:h-[480px] cursor-grab active:cursor-grabbing touch-none select-none" />
 
                     {/* Quick Region Selector Chips for fast navigation */}
                     <div className="w-full p-2.5 bg-slate-950/70 border-t border-white/10 flex items-center gap-1.5 overflow-x-auto text-10 custom-scrollbar">

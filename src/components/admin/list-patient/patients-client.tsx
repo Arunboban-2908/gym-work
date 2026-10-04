@@ -41,17 +41,16 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
     };
 
     return (
-        <div className="p-6 pb-20">
+        <div className="p-3.5 sm:p-6 pb-20 font-sora">
             <div className="flex justify-between items-start mb-6">
                 <div>
-                    <h1 className="text-20 font-bold text-adm-text tracking-tight">All Patients</h1>
+                    <h1 className="text-18 sm:text-20 font-bold text-adm-text tracking-tight">All Patients</h1>
                     <p className="text-xs text-adm-muted mt-1 font-mono">{initialPatients.length} registered</p>
                 </div>
-                {/* Add Patient button removed as per new flow */}
             </div>
 
-            <div className="flex gap-3 mb-4">
-                <div className="relative w-280px">
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mb-4">
+                <div className="relative flex-1 sm:max-w-[280px]">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-adm-muted" />
                     <input
                         type="text"
@@ -61,25 +60,27 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
                         className="w-full bg-adm-surface border border-adm-border rounded-md py-2 pl-9 pr-3 text-sm text-adm-text outline-none focus:border-adm-accent transition-colors font-sora"
                     />
                 </div>
-                <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    className="bg-adm-surface border border-adm-border rounded-md px-3 py-7px text-12 text-adm-text outline-none focus:border-adm-accent font-sora min-w-130px"
-                >
-                    <option value="">All Status</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="CRITICAL">Critical</option>
-                    <option value="DISCHARGED">Discharged</option>
-                </select>
-                <select
-                    value={verifyFilter}
-                    onChange={(e) => setVerifyFilter(e.target.value)}
-                    className="bg-adm-surface border border-adm-border rounded-md px-3 py-7px text-12 text-adm-text outline-none focus:border-adm-accent font-sora min-w-130px"
-                >
-                    <option value="">All Users</option>
-                    <option value="VERIFIED">Verified</option>
-                    <option value="UNVERIFIED">Unverified</option>
-                </select>
+                <div className="flex gap-2">
+                    <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        className="flex-1 sm:flex-none bg-adm-surface border border-adm-border rounded-md px-3 py-2 text-12 text-adm-text outline-none focus:border-adm-accent font-sora min-w-0 sm:min-w-[130px]"
+                    >
+                        <option value="">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="CRITICAL">Critical</option>
+                        <option value="DISCHARGED">Discharged</option>
+                    </select>
+                    <select
+                        value={verifyFilter}
+                        onChange={(e) => setVerifyFilter(e.target.value)}
+                        className="flex-1 sm:flex-none bg-adm-surface border border-adm-border rounded-md px-3 py-2 text-12 text-adm-text outline-none focus:border-adm-accent font-sora min-w-0 sm:min-w-[130px]"
+                    >
+                        <option value="">All Users</option>
+                        <option value="VERIFIED">Verified</option>
+                        <option value="UNVERIFIED">Unverified</option>
+                    </select>
+                </div>
             </div>
 
             <div className="bg-adm-card border border-adm-border rounded-xl overflow-hidden shadow-sm">

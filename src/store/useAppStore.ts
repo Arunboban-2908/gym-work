@@ -7,11 +7,14 @@ interface AppState {
     exercises: Exercise[];
     appointments: Appointment[];
     activePatientId: number;
+    adminSidebarOpen: boolean;
 
     // Actions
     addPatient: (patient: Omit<Patient, 'id' | 'week' | 'recoveryPct' | 'upperLimb' | 'trunk' | 'fineMotor' | 'sensory' | 'status'>) => void;
     updatePatientStatus: (id: number, status: Patient['status']) => void;
     addAppointment: (appointment: Omit<Appointment, 'id'>) => void;
+    toggleAdminSidebar: () => void;
+    setAdminSidebarOpen: (open: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -19,6 +22,7 @@ export const useAppStore = create<AppState>((set) => ({
     exercises: INITIAL_EXERCISES,
     appointments: INITIAL_APPOINTMENTS,
     activePatientId: 1, // Defaulting to James Mitchell
+    adminSidebarOpen: false,
 
     addPatient: (patientData) => set((state) => {
         const newId = Math.max(0, ...state.patients.map(p => p.id)) + 1;
@@ -44,4 +48,7 @@ export const useAppStore = create<AppState>((set) => ({
         const newId = Math.max(0, ...state.appointments.map(a => a.id)) + 1;
         return { appointments: [...state.appointments, { ...appData, id: newId }] };
     }),
+
+    toggleAdminSidebar: () => set((state) => ({ adminSidebarOpen: !state.adminSidebarOpen })),
+    setAdminSidebarOpen: (open: boolean) => set({ adminSidebarOpen: open }),
 }));

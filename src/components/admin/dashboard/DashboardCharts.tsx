@@ -12,7 +12,7 @@ interface DashboardChartsProps {
 export function DashboardCharts({ recoveryData, injuryData, motorData }: DashboardChartsProps) {
     return (
         <>
-            <div className="grid grid-cols-[1.5fr_1fr] gap-4 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4 mb-4">
                 <ChartCard title="Recovery Trends" subtitle="Last 8 weeks" type="line" data={recoveryData} />
                 <ChartCard title="Injury Tracking" type="doughnut" data={injuryData} options={{ cutout: '75%' } as ChartOptions<'doughnut'>} />
             </div>

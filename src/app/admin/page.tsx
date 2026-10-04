@@ -106,7 +106,7 @@ export default async function AdminDashboard() {
     }));
 
     return (
-        <div className="p-6 pb-19">
+        <div className="p-3.5 sm:p-6 pb-20 font-sora">
             <DashboardHeader />
 
             <StatsCards
@@ -124,7 +124,7 @@ export default async function AdminDashboard() {
 
             <PatientTable patients={tableRows} />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <MotorChart motorData={motorData} />
                 <ActivityFeed activities={activityItems} />
             </div>

@@ -118,7 +118,7 @@ export default function AdminProgressPage() {
     };
 
     return (
-        <div className="p-6 pb-24 font-sora">
+        <div className="p-3.5 sm:p-6 pb-24 font-sora">
             {/* Header */}
             <div className="mb-6">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-10 font-bold bg-adm-accent/15 text-adm-accent border border-adm-accent/30 mb-2 uppercase tracking-wide">
@@ -248,12 +248,12 @@ export default function AdminProgressPage() {
                     </div>
 
                     {/* Patient Picker */}
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                         <label className="text-xs font-semibold text-adm-muted shrink-0">Select Patient:</label>
                         <select
                             value={selectedPatientId || ''}
                             onChange={(e) => setSelectedPatientId(parseInt(e.target.value))}
-                            className="bg-adm-surface border border-adm-border rounded-xl px-3 py-2 text-xs text-adm-text outline-none focus:border-adm-accent font-sora min-w-[220px]"
+                            className="bg-adm-surface border border-adm-border rounded-xl px-3 py-2 text-xs text-adm-text outline-none focus:border-adm-accent font-sora w-full sm:w-auto min-w-[200px]"
                         >
                             {patientsList.map((p) => (
                                 <option key={p.id} value={p.id}>

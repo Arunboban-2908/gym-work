@@ -226,10 +226,10 @@ export default function OnboardingPage() {
     }
 
     return (
-        <div className="min-h-screen bg-adm-bg text-adm-text font-sora antialiased py-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-adm-bg text-adm-text font-sora antialiased py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-adm-border/80 gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 sm:pb-6 border-b border-adm-border/80 gap-3 sm:gap-4">
                     <div>
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-10 font-bold bg-adm-accent/15 text-adm-accent border border-adm-accent/30 uppercase tracking-widest mb-2">
                             <Activity size={13} />
@@ -257,7 +257,7 @@ export default function OnboardingPage() {
                 </div>
 
                 {/* Steps Navigator Tracker */}
-                <div className="grid grid-cols-5 gap-2 my-6">
+                <div className="flex overflow-x-auto sm:grid sm:grid-cols-5 gap-2 my-4 sm:my-6 pb-2 sm:pb-0 scrollbar-none">
                     {[
                         { num: 1, label: 'Basic Health', icon: HeartPulse },
                         { num: 2, label: 'Fitness Goals', icon: Target },
@@ -271,7 +271,7 @@ export default function OnboardingPage() {
                         return (
                             <div
                                 key={s.num}
-                                className={`p-2.5 rounded-xl border flex flex-col items-center sm:items-start text-center sm:text-left transition-all ${
+                                className={`p-2 sm:p-2.5 rounded-xl border flex flex-col items-center sm:items-start text-center sm:text-left transition-all min-w-[110px] sm:min-w-0 shrink-0 ${
                                     isCurrent
                                         ? 'bg-adm-accent/15 border-adm-accent shadow-sm'
                                         : isDone
@@ -306,7 +306,7 @@ export default function OnboardingPage() {
                 )}
 
                 {/* Step Form Box */}
-                <div className="bg-adm-card border border-adm-border rounded-2xl p-6 sm:p-8 shadow-xl">
+                <div className="bg-adm-card border border-adm-border rounded-2xl p-4 sm:p-8 shadow-xl">
                     {/* ==================== STEP 1 ==================== */}
                     {step === 1 && (
                         <div className="space-y-6">
@@ -578,19 +578,19 @@ export default function OnboardingPage() {
                     )}
 
                     {/* Bottom Nav / Controls */}
-                    <div className="mt-8 pt-6 border-t border-adm-border/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div>
+                    <div className="mt-8 pt-6 border-t border-adm-border/80 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-4">
+                        <div className="w-full sm:w-auto">
                             {step > 1 ? (
                                 <button
                                     type="button"
                                     onClick={handleBack}
-                                    className="px-4 py-2.5 rounded-xl bg-adm-surface border border-adm-border text-adm-text hover:bg-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                    className="w-full sm:w-auto justify-center px-4 py-3 sm:py-2.5 rounded-xl bg-adm-surface border border-adm-border text-adm-text hover:bg-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                                 >
                                     <ChevronLeft size={16} />
                                     <span>Back to Step {step - 1}</span>
                                 </button>
                             ) : (
-                                <span className="text-11 text-adm-muted">Step 1 of 5</span>
+                                <span className="text-11 text-adm-muted text-center block sm:inline">Step 1 of 5</span>
                             )}
                         </div>
 
@@ -599,7 +599,7 @@ export default function OnboardingPage() {
                                 <button
                                     type="button"
                                     onClick={handleNext}
-                                    className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-adm-accent hover:brightness-110 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-adm-accent/25 transition-all cursor-pointer"
+                                    className="w-full sm:w-auto px-6 py-3 sm:py-2.5 rounded-xl bg-adm-accent hover:brightness-110 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-adm-accent/25 transition-all cursor-pointer"
                                 >
                                     <span>Continue to Step {step + 1}</span>
                                     <ChevronRight size={16} />
@@ -609,7 +609,7 @@ export default function OnboardingPage() {
                                     type="button"
                                     disabled={submitting}
                                     onClick={handleFinalSubmit}
-                                    className="flex-1 sm:flex-none px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all disabled:opacity-50 cursor-pointer"
+                                    className="w-full sm:w-auto px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all disabled:opacity-50 cursor-pointer"
                                 >
                                     {submitting ? (
                                         <>

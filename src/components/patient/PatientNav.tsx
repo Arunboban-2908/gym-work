@@ -36,7 +36,7 @@ export function PatientNav() {
     };
 
     return (
-        <div className="flex md:flex-col bg-pat-card border-t md:border-t-0 md:border-r border-pat-border px-2.5 py-2 md:py-6 md:w-100px shrink-0 justify-around md:justify-start gap-0 md:gap-4 md:items-center">
+        <div className="flex md:flex-col bg-pat-card border-t md:border-t-0 md:border-r border-pat-border px-1.5 sm:px-2.5 py-1.5 pb-2 md:py-6 md:w-100px shrink-0 justify-around md:justify-start gap-0.5 md:gap-4 md:items-center z-40 select-none">
             {tabs.map(tab => {
                 const isActive = tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
                 const Icon = tab.icon;
@@ -44,12 +44,12 @@ export function PatientNav() {
                     <Link
                         key={tab.href}
                         href={tab.href}
-                        className={`flex-1 md:flex-none md:w-full flex flex-col items-center justify-center gap-1.5 cursor-pointer p-2 rounded-xl transition-all ${isActive ? 'bg-pat-blue-soft' : 'hover:bg-pat-bg'}`}
+                        className={`flex-1 md:flex-none md:w-full flex flex-col items-center justify-center gap-1 cursor-pointer py-1.5 px-1 md:p-2 rounded-xl transition-all ${isActive ? 'bg-pat-blue-soft/80' : 'hover:bg-pat-bg active:scale-95'}`}
                     >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-pat-navy text-white shadow-md' : 'text-pat-muted'}`}>
-                            <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-pat-navy text-white shadow-md' : 'text-pat-muted'}`}>
+                            <Icon className="w-4 h-4 md:w-5 md:h-5" strokeWidth={isActive ? 2.5 : 1.8} />
                         </div>
-                        <span className={`text-10 md:text-11 font-bold tracking-wide ${isActive ? 'text-pat-navy' : 'text-pat-muted'}`}>
+                        <span className={`text-[9px] md:text-11 font-bold tracking-tight md:tracking-wide text-center truncate max-w-full ${isActive ? 'text-pat-navy' : 'text-pat-muted'}`}>
                             {tab.label}
                         </span>
                     </Link>
@@ -58,12 +58,12 @@ export function PatientNav() {
             
             <button
                 onClick={handleLogout}
-                className="flex-1 md:flex-none md:w-full flex flex-col items-center justify-center gap-1.5 cursor-pointer p-2 rounded-xl transition-all hover:bg-red-50 group"
+                className="flex-1 md:flex-none md:w-full flex flex-col items-center justify-center gap-1 cursor-pointer py-1.5 px-1 md:p-2 rounded-xl transition-all hover:bg-red-50 active:scale-95 group"
             >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-pat-muted group-hover:text-red-500 transition-colors">
-                    <LogOut size={20} strokeWidth={1.8} />
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-pat-muted group-hover:text-red-500 transition-colors">
+                    <LogOut className="w-4 h-4 md:w-5 md:h-5" strokeWidth={1.8} />
                 </div>
-                <span className="text-10 md:text-11 font-bold tracking-wide text-pat-muted group-hover:text-red-600 transition-colors">
+                <span className="text-[9px] md:text-11 font-bold tracking-tight md:tracking-wide text-pat-muted group-hover:text-red-600 transition-colors">
                     Logout
                 </span>
             </button>

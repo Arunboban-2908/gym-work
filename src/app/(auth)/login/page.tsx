@@ -147,10 +147,10 @@ function LoginForm() {
                             </span>
                             <span className="text-10 uppercase tracking-widest bg-adm-accent/20 px-1.5 py-0.5 rounded text-adm-text font-mono">Ready</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-11 font-mono text-adm-text">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-11 font-mono text-adm-text">
                             <div className="bg-adm-bg/60 p-2 rounded-lg border border-adm-border/50">
                                 <span className="text-9 text-adm-muted block font-sans">ADMIN ID:</span>
-                                <span className="text-adm-accent font-bold">admin@neuropath.com</span>
+                                <span className="text-adm-accent font-bold break-all">admin@neuropath.com</span>
                             </div>
                             <div className="bg-adm-bg/60 p-2 rounded-lg border border-adm-border/50">
                                 <span className="text-9 text-adm-muted block font-sans">PASSWORD:</span>
