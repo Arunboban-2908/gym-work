@@ -1,24 +1,31 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Plus, Search, BadgeCheck, ShieldAlert } from 'lucide-react';
+import { Plus, Search, BadgeCheck, ShieldAlert, Trash2, AlertTriangle, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PatientWithAssessments, verifyPatient } from '@/actions/patient';
+import { PatientWithAssessments, deletePatient } from '@/actions/patient';
 import PatientModal from './patient-modal';
 import { useToast } from '@/components/ui/Toast';
 
 export default function PatientsClient({ initialPatients }: { initialPatients: PatientWithAssessments[] }) {
     const router = useRouter();
     const { toast } = useToast();
+    const [patients, setPatients] = useState<PatientWithAssessments[]>(initialPatients);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('');
     const [verifyFilter, setVerifyFilter] = useState('');
     const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<PatientWithAssessments | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    useEffect(() => {
+        setPatients(initialPatients);
+    }, [initialPatients]);
 
     const filteredPatients = useMemo(() => {
-        return initialPatients.filter(p => {
+        return patients.filter(p => {
             const matchSearch = (p.firstName + ' ' + p.lastName).toLowerCase().includes(search.toLowerCase());
             const matchFilter = filter ? p.status === filter : true;
             
@@ -28,7 +35,30 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
 
             return matchSearch && matchFilter && matchVerify;
         });
-    }, [initialPatients, search, filter, verifyFilter]);
+    }, [patients, search, filter, verifyFilter]);
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        setIsDeleting(true);
+        try {
+            const res = await deletePatient(deleteTarget.id);
+            if (res.success) {
+                toast(`User ${deleteTarget.firstName} ${deleteTarget.lastName} deleted permanently.`, 'success');
+                setPatients(prev => prev.filter(p => p.id !== deleteTarget.id));
+                setDeleteTarget(null);
+                if (selectedPatientId === deleteTarget.id) {
+                    setSelectedPatientId(null);
+                }
+                router.refresh();
+            } else {
+                toast(res.error || 'Failed to delete user', 'error');
+            }
+        } catch {
+            toast('Failed to delete user. Please try again.', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const getStatusTag = (status: string) => {
         const map: Record<string, string> = {
@@ -44,8 +74,8 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
         <div className="p-3.5 sm:p-6 pb-20 font-sora">
             <div className="flex justify-between items-start mb-6">
                 <div>
-                    <h1 className="text-18 sm:text-20 font-bold text-adm-text tracking-tight">All Patients</h1>
-                    <p className="text-xs text-adm-muted mt-1 font-mono">{initialPatients.length} registered</p>
+                    <h1 className="text-18 sm:text-20 font-bold text-adm-text tracking-tight">All Patients & Users</h1>
+                    <p className="text-xs text-adm-muted mt-1 font-mono">{patients.length} registered</p>
                 </div>
             </div>
 
@@ -111,14 +141,20 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
                                 const recoveryPct = latestAssessment?.recoveryPct || 0;
 
                                 return (
-                                    <tr key={p.id} className="hover:bg-white/5 border-b border-adm-border2 last:border-none cursor-pointer transition-colors">
+                                    <tr 
+                                        key={p.id} 
+                                        onClick={() => setSelectedPatientId(p.id)}
+                                        className="hover:bg-white/5 border-b border-adm-border2 last:border-none cursor-pointer transition-colors group"
+                                    >
                                         <td className="p-3 px-4">
                                             <div className="flex items-center gap-2.5">
                                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white bg-adm-accent shrink-0">
                                                     {p.firstName[0]}{p.lastName[0]}
                                                 </div>
                                                 <div>
-                                                    <div className="text-13 font-semibold text-adm-text">{p.firstName} {p.lastName}</div>
+                                                    <div className="text-13 font-semibold text-adm-text group-hover:text-adm-accent transition-colors">
+                                                        {p.firstName} {p.lastName}
+                                                    </div>
                                                     <div className="font-mono text-11 text-adm-muted">#P{String(p.id).padStart(4, '0')}</div>
                                                 </div>
                                             </div>
@@ -144,12 +180,12 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
                                             )}
                                         </td>
                                         <td className="p-3 px-4 text-right">
-                                            <div className="flex justify-end gap-2">
+                                            <div className="flex justify-end items-center gap-1 sm:gap-2">
                                                 {!p.isVerified && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm" 
-                                                        className="text-[#3fb950] hover:bg-[#3fb950]/10 hover:text-[#3fb950] border border-[#3fb950]/20"
+                                                        className="text-[#3fb950] hover:bg-[#3fb950]/10 hover:text-[#3fb950] border border-[#3fb950]/20 text-xs px-2.5 py-1"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             router.push(`/admin/add-patient/${p.id}`);
@@ -158,10 +194,28 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
                                                         Verify
                                                     </Button>
                                                 )}
-                                                <Button variant="ghost" size="sm" onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    router.push(`/admin/add-patient/${p.id}`);
-                                                }}>Edit</Button>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="text-xs px-2.5 py-1 text-adm-muted hover:text-adm-text hover:bg-white/5"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.push(`/admin/add-patient/${p.id}`);
+                                                    }}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <button
+                                                    type="button"
+                                                    title={`Delete user ${p.firstName} ${p.lastName}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDeleteTarget(p);
+                                                    }}
+                                                    className="p-1.5 rounded-lg text-adm-muted hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -169,7 +223,7 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
                             })}
                             {filteredPatients.length === 0 && (
                                 <tr>
-                                    <td colSpan={8} className="p-10 text-center text-adm-muted text-sm border-none">
+                                    <td colSpan={9} className="p-10 text-center text-adm-muted text-sm border-none">
                                         No patients found matching the criteria.
                                     </td>
                                 </tr>
@@ -179,14 +233,78 @@ export default function PatientsClient({ initialPatients }: { initialPatients: P
                 </div>
             </div>
 
+            {/* Patient Deep Dive Modal */}
             {selectedPatientId && (
                 <PatientModal
                     patientId={selectedPatientId}
                     onClose={() => setSelectedPatientId(null)}
                     onUpdated={() => {
-                        router.refresh(); // Refresh page to re-fetch Server Component props
+                        setPatients(prev => prev.filter(p => p.id !== selectedPatientId));
+                        setSelectedPatientId(null);
+                        router.refresh();
                     }}
                 />
+            )}
+
+            {/* Delete User Confirmation Modal */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-[1200] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-adm-card border border-adm-border rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 font-sora">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                                <AlertTriangle size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-adm-text">Delete Patient & User</h3>
+                                <p className="text-xs text-adm-muted font-mono">Permanent system removal</p>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-adm-muted leading-relaxed mb-4">
+                            Are you sure you want to permanently delete <strong className="text-adm-text">{deleteTarget.firstName} {deleteTarget.lastName}</strong> (#P{String(deleteTarget.id).padStart(4, '0')})?
+                        </p>
+
+                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-11 text-red-300 leading-normal mb-6 space-y-1">
+                            <div className="font-semibold text-red-400">⚠️ This action will permanently remove:</div>
+                            <ul className="list-disc pl-4 space-y-0.5 text-10 text-red-300/90 font-mono">
+                                <li>User credentials & login account</li>
+                                <li>Clinical baseline profile & 3D pain records</li>
+                                <li>Daily health logs & progress assessments</li>
+                                <li>Cloudinary medical report documents</li>
+                            </ul>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2.5">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={isDeleting}
+                                onClick={() => setDeleteTarget(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="danger"
+                                size="sm"
+                                disabled={isDeleting}
+                                onClick={handleDelete}
+                                className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white font-bold"
+                            >
+                                {isDeleting ? (
+                                    <>
+                                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        <span>Deleting...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 size={14} />
+                                        <span>Yes, Delete User</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

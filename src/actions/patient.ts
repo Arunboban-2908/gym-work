@@ -459,7 +459,7 @@ export async function createPatientForUser(userId: string, name: string, email: 
 
 /**
  * Deletes a patient and all associated records (Admin-only).
- * Also cleans up Cloudinary assets if any.
+ * Also cleans up Cloudinary assets and user auth account if any.
  */
 export async function deletePatient(id: number) {
     try {
@@ -494,24 +494,71 @@ export async function deletePatient(id: number) {
             }
         }
 
+        const userId = patient.userId;
+
         // Delete patient record - cascade deletes relations
         await prisma.patient.delete({
             where: { id }
         });
 
         // Also delete associated User account if exists
-        if (patient.userId) {
+        if (userId) {
             await prisma.user.delete({
-                where: { id: patient.userId }
-            }).catch(() => {});
+                where: { id: userId }
+            }).catch((err) => {
+                console.warn('Could not delete user account for patient:', userId, err);
+            });
         }
 
         revalidatePath('/admin');
         revalidatePath('/admin/patients');
+        revalidatePath('/admin/progress');
         return { success: true as const };
     } catch (error) {
         console.error('Error deleting patient:', error);
         return { success: false as const, error: 'Failed to delete patient' };
+    }
+}
+
+/**
+ * Deletes any user account by User ID (Admin-only).
+ * Automatically cleans up their patient records, reports, sessions, and accounts.
+ */
+export async function deleteUser(userId: string) {
+    try {
+        const h = await headers();
+        const session = await auth.api.getSession({ headers: h });
+        if (session?.user?.role !== 'admin') {
+            return { success: false as const, error: 'Unauthorized. Admin access required.' };
+        }
+
+        // Prevent admin from accidentally deleting their own logged-in admin account
+        if (session?.user?.id === userId) {
+            return { success: false as const, error: 'Cannot delete the currently logged-in administrator account.' };
+        }
+
+        // Check if there is an associated patient profile
+        const patient = await prisma.patient.findFirst({
+            where: { userId },
+            include: { reports: true }
+        });
+
+        if (patient) {
+            return await deletePatient(patient.id);
+        }
+
+        // Delete user directly (cascades to accounts and sessions)
+        await prisma.user.delete({
+            where: { id: userId }
+        });
+
+        revalidatePath('/admin');
+        revalidatePath('/admin/patients');
+        revalidatePath('/admin/progress');
+        return { success: true as const };
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        return { success: false as const, error: 'Failed to delete user' };
     }
 }
 

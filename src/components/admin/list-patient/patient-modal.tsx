@@ -651,7 +651,7 @@ export default function PatientModal({ patientId, onClose, onUpdated }: PatientM
                                 className="px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                                 <Trash2 size={13} />
-                                <span>Delete Patient</span>
+                                <span>Delete User</span>
                             </button>
                         )}
                     </div>
